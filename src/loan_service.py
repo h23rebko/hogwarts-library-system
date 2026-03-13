@@ -14,3 +14,9 @@ class LoanService:
 
     def is_loaned(self, title):
         return title in self.repository.loaned_books
+    def find_loaned_book(self, title):
+        normalized = title.strip().lower()
+        for book in self.repository.loaned_books:
+            if book.lower() == normalized:
+                return book
+        return None

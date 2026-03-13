@@ -30,27 +30,39 @@ def main():
         choice = input("Välj alternativ: ")
 
         if choice == "1":
-            title = input("Ange boktitel: ")
+            title = input("Ange boktitel: ").strip() #"Strip" tar bort extra whitespace och case-insensitive
             book_service.add_book(title)
             print("Bok tillagd.")
 
+
         elif choice == "2":
             title = input("Ange bok att låna: ")
-            library_service.borrow_book(title)
+            try:
+                library_service.borrow_book(title)
+                print("Bok utlånad.")
+            except ValueError as e:
+                print(f"Fel: {e}")
 
         elif choice == "3":
             title = input("Ange bok att lämna tillbaka: ")
-            library_service.return_book(title)
+            try:
+                library_service.return_book(title)
+                print("Bok återlämnad.")
+            except ValueError as e:
+                print(f"Fel: {e}")
 
         elif choice == "4":
             books = book_service.get_available_books()
             print("Tillgängliga böcker:")
+            print()  # Lägger till tom rad innan resultatet
             for book in books:
                 print(f"- {book}")
 
         elif choice == "5":
             history = loan_service.get_loan_history()
             print("Lånehistorik:")
+            print()  # Lägger till tom rad innan resultatet
+
             for entry in history:
                 print(f"- {entry}")
 

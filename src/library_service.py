@@ -4,21 +4,19 @@ class LibraryService:
         self.loan_service = loan_service
 
     def borrow_book(self, title):
-        if not self.book_service.book_exists(title):
+        match = self.book_service.find_available_book(title)
+
+        if not match:
             raise ValueError("Book does not exist or is already loaned")
 
-        # Ta bort från tillgängliga
-        self.book_service.repository.remove_available_book(title)
-
-        # Registrera lån
-        self.loan_service.register_loan(title)
+        self.book_service.repository.remove_available_book(match)
+        self.loan_service.register_loan(match)
 
     def return_book(self, title):
-        if not self.loan_service.is_loaned(title):
+        match = self.loan_service.find_loaned_book(title)
+
+        if not match:
             raise ValueError("Book is not currently loaned")
 
-        # Ta bort från loaned
-        self.loan_service.register_return(title)
-
-        # Lägg tillbaka till available
-        self.book_service.repository.add_book(title)
+        self.loan_service.register_return(match)
+        self.book_service.repository.add_book(match)
