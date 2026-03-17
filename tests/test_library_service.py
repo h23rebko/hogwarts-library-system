@@ -1,30 +1,41 @@
 from unittest.mock import Mock
+import pytest
+
 from src.library_service import LibraryService
+from src.library_repository import LibraryRepository
+from src.book_service import BookService
+from src.loan_service import LoanService
 
-
-def test_borrow_book_calls_register_loan():
-    # Mockade beroenden
+def test_borrow_book_calls_dependencies():
     mock_book_service = Mock()
     mock_loan_service = Mock()
-
-    # Mocka repository som finns inuti book_service
     mock_book_service.repository = Mock()
 
-    # Beteende
     mock_book_service.find_available_book.return_value = "Testbok"
 
-    # System Under Test
     library_service = LibraryService(mock_book_service, mock_loan_service)
 
-    # Kör metoden
     library_service.borrow_book("Testbok")
 
-    # Verifiera att rätt metoder anropades
     mock_book_service.repository.remove_available_book.assert_called_once_with("Testbok")
     mock_loan_service.register_loan.assert_called_once_with("Testbok")
 
+def test_return_book_raises_error_if_not_loaned():
+    # 1. Setup mocks
+    mock_book_service = Mock()
+    mock_loan_service = Mock()
+    
+    # 2. Simulera att boken INTE hittas (match blir None)
+    mock_loan_service.find_loaned_book.return_value = None
+    
+    service = LibraryService(mock_book_service, mock_loan_service)
+    
+    # 3. Detta triggar 'if not match'-raden och 'raise'-raden
+    with pytest.raises(ValueError, match="Book is not currently loaned"):
+        service.return_book("En bok som inte är utlånad")
 
-def test_borrow_book_raises_error_if_book_not_found():
+
+def test_borrow_book_raises_error_if_not_found():
     mock_book_service = Mock()
     mock_loan_service = Mock()
 
@@ -32,41 +43,30 @@ def test_borrow_book_raises_error_if_book_not_found():
 
     library_service = LibraryService(mock_book_service, mock_loan_service)
 
-    try:
+    with pytest.raises(ValueError):
         library_service.borrow_book("Okänd bok")
-    except ValueError:
-        assert True
-    else:
-        assert False
 
 
-def test_return_book_calls_register_return_and_add_book():
-    mock_book_service = Mock()
-    mock_loan_service = Mock()
+def test_borrow_and_return_book_integration():
+    # Riktiga objekt
+    repository = LibraryRepository()
+    book_service = BookService(repository)
+    loan_service = LoanService(repository)
+    library_service = LibraryService(book_service, loan_service)
 
-    mock_book_service.repository = Mock()
+    # Lägg till bok
+    book_service.add_book("Testbok")
 
-    mock_loan_service.find_loaned_book.return_value = "Testbok"
+    # Låna bok
+    library_service.borrow_book("Testbok")
 
-    library_service = LibraryService(mock_book_service, mock_loan_service)
+    # Kontrollera att den är utlånad
+    assert "Testbok" in repository.loaned_books
+    assert "Testbok" not in repository.available_books
 
+    # Lämna tillbaka
     library_service.return_book("Testbok")
 
-    mock_loan_service.register_return.assert_called_once_with("Testbok")
-    mock_book_service.repository.add_book.assert_called_once_with("Testbok")
-
-
-def test_return_book_raises_error_if_not_loaned():
-    mock_book_service = Mock()
-    mock_loan_service = Mock()
-
-    mock_loan_service.find_loaned_book.return_value = None
-
-    library_service = LibraryService(mock_book_service, mock_loan_service)
-
-    try:
-        library_service.return_book("Testbok")
-    except ValueError:
-        assert True
-    else:
-        assert False
+    # Kontrollera att den är tillbaka
+    assert "Testbok" in repository.available_books
+    assert "Testbok" not in repository.loaned_books
