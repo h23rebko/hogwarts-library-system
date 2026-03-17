@@ -84,3 +84,31 @@ def test_find_loaned_book_returns_none_if_not_found():
 
     # ACT & ASSERT
     assert loan_service.find_loaned_book("Finns inte") is None
+
+    # ACT & ASSERT
+    assert loan_service.find_loaned_book("Finns inte") is None
+
+# Integrationstest! Verifierar hela låne- och returcykeln
+# genom att använda den riktiga LibraryRepository.
+def test_loan_service_integration_loan_and_return_cycle():
+
+    # ARRANGE: Skapa riktiga instanser av servicen och dess beroende
+    repository = LibraryRepository()
+    loan_service = LoanService(repository)
+    book_title = "Quidditch Through the Ages"
+
+    # ACT 1: Registrera ett lån
+    loan_service.register_loan(book_title)
+
+    # ASSERT 1: Verifiera status efter lån
+    assert book_title in repository.loaned_books
+    assert book_title in repository.loan_history
+    assert len(repository.loaned_books) == 1
+
+    # ACT 2: Registrera en retur
+    loan_service.register_return(book_title)
+
+    # ASSERT 2: Verifiera status efter retur
+    assert book_title not in repository.loaned_books
+    assert len(repository.loaned_books) == 0
+
