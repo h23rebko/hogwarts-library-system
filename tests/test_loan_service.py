@@ -3,25 +3,30 @@ from src.loan_service import LoanService
 from src.library_repository import LibraryRepository # Importera för att kunna instansiera vid behov, även om vi mockar
 import pytest
 
-
-def test_register_loan_calls_repository_methods():
-    # ARRANGE: Skapa en mock för repository och en instans av LoanService
+#en fixtur som sätter upp LoanService med mockad repository för varje test.
+@pytest.fixture
+def setup_service():
     mock_repository = Mock(spec=LibraryRepository)
     loan_service = LoanService(mock_repository)
+    return loan_service, mock_repository
+
+
+def test_register_loan_calls_repository_methods(setup_service):
+    # ARRANGE
+    loan_service, mock_repository = setup_service
     book_title = "Hogwarts: En historia"
 
-    # ACT: Anropa metoden vi vill testa
+    # ACT
     loan_service.register_loan(book_title)
 
-    # ASSERT: Verifiera att rätt metoder anropades på mock-objektet
+    # ASSERT
     mock_repository.add_loaned_book.assert_called_once_with(book_title)
     mock_repository.add_to_history.assert_called_once_with(book_title)
 
 
-def test_register_return_calls_repository_method():
+def test_register_return_calls_repository_method(setup_service):
     # ARRANGE
-    mock_repository = Mock(spec=LibraryRepository)
-    loan_service = LoanService(mock_repository)
+    loan_service, mock_repository = setup_service
     book_title = "Hogwarts: En historia"
 
     # ACT
@@ -31,12 +36,10 @@ def test_register_return_calls_repository_method():
     mock_repository.remove_loaned_book.assert_called_once_with(book_title)
 
 
-def test_get_loan_history_returns_repository_history():
+def test_get_loan_history_returns_repository_history(setup_service):
     # ARRANGE
-    mock_repository = Mock(spec=LibraryRepository)
-    # Ställ in returvärdet för mockens egenskap
+    loan_service, mock_repository = setup_service
     mock_repository.loan_history = ["Bok A", "Bok B"]
-    loan_service = LoanService(mock_repository)
 
     # ACT
     history = loan_service.get_loan_history()
@@ -45,45 +48,38 @@ def test_get_loan_history_returns_repository_history():
     assert history == ["Bok A", "Bok B"]
 
 
-def test_is_loaned_returns_true_if_book_is_loaned():
+def test_is_loaned_returns_true_if_book_is_loaned(setup_service):
     # ARRANGE
-    mock_repository = Mock(spec=LibraryRepository)
+    loan_service, mock_repository = setup_service
     mock_repository.loaned_books = ["Testbok", "Annan bok"]
-    loan_service = LoanService(mock_repository)
 
     # ACT & ASSERT
     assert loan_service.is_loaned("Testbok")
 
 
-def test_is_loaned_returns_false_if_book_is_not_loaned():
+def test_is_loaned_returns_false_if_book_is_not_loaned(setup_service):
     # ARRANGE
-    mock_repository = Mock(spec=LibraryRepository)
+    loan_service, mock_repository = setup_service
     mock_repository.loaned_books = ["Annan bok"]
-    loan_service = LoanService(mock_repository)
 
     # ACT & ASSERT
     assert loan_service.is_loaned("Testbok") is False
 
 
-def test_find_loaned_book_returns_correct_book_case_insensitive():
+def test_find_loaned_book_returns_correct_book_case_insensitive(setup_service):
     # ARRANGE
-    mock_repository = Mock(spec=LibraryRepository)
+    loan_service, mock_repository = setup_service
     mock_repository.loaned_books = ["Hogwarts: En historia", "Avancerade Trolldrycker"]
-    loan_service = LoanService(mock_repository)
 
     # ACT & ASSERT
     assert loan_service.find_loaned_book("hogwarts: en historia") == "Hogwarts: En historia"
     assert loan_service.find_loaned_book("AVANCERADE TROLLDRYCKER") == "Avancerade Trolldrycker"
 
 
-def test_find_loaned_book_returns_none_if_not_found():
+def test_find_loaned_book_returns_none_if_not_found(setup_service):
     # ARRANGE
-    mock_repository = Mock(spec=LibraryRepository)
+    loan_service, mock_repository = setup_service
     mock_repository.loaned_books = ["Hogwarts: En historia"]
-    loan_service = LoanService(mock_repository)
-
-    # ACT & ASSERT
-    assert loan_service.find_loaned_book("Finns inte") is None
 
     # ACT & ASSERT
     assert loan_service.find_loaned_book("Finns inte") is None
@@ -111,4 +107,3 @@ def test_loan_service_integration_loan_and_return_cycle():
     # ASSERT 2: Verifiera status efter retur
     assert book_title not in repository.loaned_books
     assert len(repository.loaned_books) == 0
-
