@@ -89,8 +89,3 @@ def test_find_available_book_returns_none_if_book_not_found():
     service.add_book("Hogwarts: En historia")
 
     assert service.find_available_book("Finns inte") is None
-
-# Kör alla tester:
-# py -m pytest
-# Kör endast detta test: 
-# py -m pytest tests/test_book_service.py
