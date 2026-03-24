@@ -35,7 +35,3 @@ def test_get_available_books_returns_correct_list():
 
     assert books == ["Testbok"]
 
-# Kör alla tester:
-# py -m pytest
-# Kör endast detta test: 
-# py -m pytest tests/test_book_service.py
